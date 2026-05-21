@@ -1,0 +1,21 @@
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Dependencias y herramientas
+node_modules/
+.vscode/
+.idea/
+
+# Variables locales
+.env
+.env.local
+
+# Logs
+*.log
+
+# Builds
+/dist
+/build
+
+public/assets/js/firebase-config.js
