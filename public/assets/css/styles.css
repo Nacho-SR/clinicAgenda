@@ -68,3 +68,33 @@ body {
     padding: 1.25rem !important;
   }
 }
+
+.table-actions .btn-group {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.25rem;
+}
+
+.table-actions .btn {
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .table-actions .btn-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .table-actions .btn {
+    width: 100%;
+  }
+}
+
+.status-helper {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.delivery-checklist li {
+  margin-bottom: 0.35rem;
+}
