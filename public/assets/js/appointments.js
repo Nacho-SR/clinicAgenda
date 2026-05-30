@@ -157,7 +157,8 @@ function validatePrerequisites() {
     saveButton.disabled = true;
 
     showAlert(
-      `Para crear citas necesitas registrar primero: ${missing.join(', ')}.`,
+      `Para crear citas necesitas registrar primero: ${missing.join(', ')}. 
+      Puedes hacerlo desde los módulos Pacientes, Especialidades y Médicos.`,
       'warning'
     );
 
