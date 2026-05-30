@@ -17,34 +17,248 @@ service cloud.firestore {
         && get(userDoc()).data.role == 'admin';
     }
 
+    function hasGlobalCreateFields() {
+      return request.resource.data.keys().hasAll([
+        'active',
+        'createdAt',
+        'updatedAt',
+        'createdBy'
+      ])
+      && request.resource.data.active is bool
+      && request.resource.data.createdBy == request.auth.uid
+      && request.resource.data.createdAt == request.time
+      && request.resource.data.updatedAt == request.time;
+    }
+
+    function hasValidGlobalUpdateFields() {
+      return request.resource.data.createdAt == resource.data.createdAt
+      && request.resource.data.createdBy == resource.data.createdBy
+      && request.resource.data.updatedAt == request.time
+      && request.resource.data.active is bool;
+    }
+
+    function isValidAppointmentStatus(status) {
+      return status in ['scheduled', 'completed', 'cancelled', 'no_show'];
+    }
+
+    function isValidGender(gender) {
+      return gender in ['female', 'male', 'other', 'not_specified'];
+    }
+
     match /users/{userId} {
+      allow create: if isOwner(userId)
+        && request.resource.data.keys().hasOnly([
+          'fullName',
+          'email',
+          'role',
+          'active',
+          'createdAt',
+          'updatedAt',
+          'createdBy'
+        ])
+        && request.resource.data.role == 'user'
+        && hasGlobalCreateFields();
+
+      allow read: if isOwner(userId) || isAdmin();
+
+      allow update: if isOwner(userId)
+        && request.resource.data.role == resource.data.role
+        && hasValidGlobalUpdateFields();
+
+      allow update: if isAdmin()
+        && hasValidGlobalUpdateFields();
+
+      allow delete: if isAdmin();
+    }
+
+    match /patients/{documentId} {
+      allow read: if isSignedIn();
+
       allow create: if isSignedIn()
-        && request.auth.uid == userId
-        && request.resource.data.role == 'admin'
-        && request.resource.data.active == true;
+        && request.resource.data.keys().hasOnly([
+          'fullName',
+          'fullNameNormalized',
+          'email',
+          'emailNormalized',
+          'phone',
+          'birthDate',
+          'gender',
+          'address',
+          'active',
+          'createdAt',
+          'updatedAt',
+          'createdBy'
+        ])
+        && request.resource.data.fullName is string
+        && request.resource.data.email is string
+        && request.resource.data.phone is string
+        && request.resource.data.birthDate is string
+        && isValidGender(request.resource.data.gender)
+        && request.resource.data.address is string
+        && hasGlobalCreateFields();
 
-      allow read, update: if isActiveAdmin();
-      allow delete: if false;
+      allow update: if isSignedIn()
+        && request.resource.data.keys().hasOnly([
+          'fullName',
+          'fullNameNormalized',
+          'email',
+          'emailNormalized',
+          'phone',
+          'birthDate',
+          'gender',
+          'address',
+          'active',
+          'createdAt',
+          'updatedAt',
+          'createdBy'
+        ])
+        && request.resource.data.fullName is string
+        && request.resource.data.email is string
+        && request.resource.data.phone is string
+        && request.resource.data.birthDate is string
+        && isValidGender(request.resource.data.gender)
+        && request.resource.data.address is string
+        && hasValidGlobalUpdateFields();
+
+      allow delete: if isAdmin();
     }
 
-    match /patients/{patientId} {
-      allow read, create, update: if isActiveAdmin();
-      allow delete: if false;
+    match /doctors/{documentId} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && request.resource.data.keys().hasOnly([
+          'fullName',
+          'fullNameNormalized',
+          'email',
+          'emailNormalized',
+          'phone',
+          'specialtyId',
+          'professionalLicense',
+          'professionalLicenseNormalized',
+          'active',
+          'createdAt',
+          'updatedAt',
+          'createdBy'
+        ])
+        && request.resource.data.fullName is string
+        && request.resource.data.email is string
+        && request.resource.data.phone is string
+        && request.resource.data.specialtyId is string
+        && request.resource.data.professionalLicense is string
+        && hasGlobalCreateFields();
+
+      allow update: if isSignedIn()
+        && request.resource.data.keys().hasOnly([
+          'fullName',
+          'fullNameNormalized',
+          'email',
+          'emailNormalized',
+          'phone',
+          'specialtyId',
+          'professionalLicense',
+          'professionalLicenseNormalized',
+          'active',
+          'createdAt',
+          'updatedAt',
+          'createdBy'
+        ])
+        && request.resource.data.fullName is string
+        && request.resource.data.email is string
+        && request.resource.data.phone is string
+        && request.resource.data.specialtyId is string
+        && request.resource.data.professionalLicense is string
+        && hasValidGlobalUpdateFields();
+
+      allow delete: if isAdmin();
     }
 
-    match /doctors/{doctorId} {
-      allow read, create, update: if isActiveAdmin();
-      allow delete: if false;
+    match /specialties/{documentId} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && request.resource.data.keys().hasOnly([
+          'name',
+          'nameNormalized',
+          'description',
+          'active',
+          'createdAt',
+          'updatedAt',
+          'createdBy'
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.nameNormalized is string
+        && request.resource.data.description is string
+        && hasGlobalCreateFields();
+
+      allow update: if isSignedIn()
+        && request.resource.data.keys().hasOnly([
+          'name',
+          'nameNormalized',
+          'description',
+          'active',
+          'createdAt',
+          'updatedAt',
+          'createdBy'
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.nameNormalized is string
+        && request.resource.data.description is string
+        && hasValidGlobalUpdateFields();
+
+      allow delete: if isAdmin();
     }
 
-    match /specialties/{specialtyId} {
-      allow read, create, update: if isActiveAdmin();
-      allow delete: if false;
-    }
+    match /appointments/{documentId} {
+      allow read: if isSignedIn();
 
-    match /appointments/{appointmentId} {
-      allow read, create, update: if isActiveAdmin();
-      allow delete: if false;
+      allow create: if isSignedIn()
+        && request.resource.data.keys().hasOnly([
+          'patientId',
+          'doctorId',
+          'specialtyId',
+          'appointmentDate',
+          'appointmentTime',
+          'reason',
+          'status',
+          'active',
+          'createdAt',
+          'updatedAt',
+          'createdBy'
+        ])
+        && request.resource.data.patientId is string
+        && request.resource.data.doctorId is string
+        && request.resource.data.specialtyId is string
+        && request.resource.data.appointmentDate is string
+        && request.resource.data.appointmentTime is string
+        && request.resource.data.reason is string
+        && isValidAppointmentStatus(request.resource.data.status)
+        && hasGlobalCreateFields();
+
+      allow update: if isSignedIn()
+        && request.resource.data.keys().hasOnly([
+          'patientId',
+          'doctorId',
+          'specialtyId',
+          'appointmentDate',
+          'appointmentTime',
+          'reason',
+          'status',
+          'active',
+          'createdAt',
+          'updatedAt',
+          'createdBy'
+        ])
+        && request.resource.data.patientId is string
+        && request.resource.data.doctorId is string
+        && request.resource.data.specialtyId is string
+        && request.resource.data.appointmentDate is string
+        && request.resource.data.appointmentTime is string
+        && request.resource.data.reason is string
+        && isValidAppointmentStatus(request.resource.data.status)
+        && hasValidGlobalUpdateFields();
+
+      allow delete: if isAdmin();
     }
   }
 }
