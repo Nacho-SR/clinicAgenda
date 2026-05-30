@@ -83,8 +83,25 @@
           </div>
           <a class="btn btn-primary btn-sm" href="./appointments.html">Ir a citas</a>
         </div>
-        <div class="empty-state">
-          <p class="mb-0">Aún no hay citas registradas.</p>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Paciente</th>
+                <th>Médico</th>
+                <th>Especialidad</th>
+              </tr>
+            </thead>
+            <tbody id="upcomingAppointmentsTableBody">
+              <tr>
+                <td colspan="5" class="text-center py-4 text-muted">
+                  Cargando citas próximas...
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
