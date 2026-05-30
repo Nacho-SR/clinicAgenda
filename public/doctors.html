@@ -12,9 +12,19 @@
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm">
     <div class="container-fluid">
       <a class="navbar-brand fw-bold" href="./dashboard.html">ClinicAgenda</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarClinic" aria-controls="navbarClinic" aria-expanded="false" aria-label="Abrir navegación">
+
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarClinic"
+        aria-controls="navbarClinic"
+        aria-expanded="false"
+        aria-label="Abrir navegación"
+      >
         <span class="navbar-toggler-icon"></span>
       </button>
+
       <div class="collapse navbar-collapse" id="navbarClinic">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item"><a class="nav-link" href="./dashboard.html">Dashboard</a></li>
@@ -23,9 +33,12 @@
           <li class="nav-item"><a class="nav-link" href="./specialties.html">Especialidades</a></li>
           <li class="nav-item"><a class="nav-link" href="./appointments.html">Citas</a></li>
         </ul>
+
         <div class="d-flex align-items-center gap-2 text-white">
           <span id="currentUserEmail" class="small d-none d-md-inline"></span>
-          <button class="btn btn-outline-light btn-sm" id="logoutButton">Salir</button>
+          <button class="btn btn-outline-light btn-sm" id="logoutButton">
+            Salir
+          </button>
         </div>
       </div>
     </div>
@@ -33,21 +46,213 @@
 
   <main class="container py-4">
     <header class="mb-4">
-      <h1 class="h3 fw-bold">CRUD de médicos</h1>
-      <p class="text-muted mb-0">TODO: Conectar médicos con especialidades y validaremos cédula/correo.</p>
+      <h1 class="h3 fw-bold">Médicos</h1>
+      <p class="text-muted mb-0">
+        Administración de médicos y relación con especialidades médicas.
+      </p>
     </header>
 
-    <section class="card app-card">
-      <div class="card-body">
-        <div class="empty-state">
-          <h2 class="h5 fw-bold mb-2">Módulo preparado</h2>
-          <p class="mb-0">La vista ya está protegida por autenticación y lista para implementar el CRUD correspondiente.</p>
-        </div>
+    <div id="alertContainer"></div>
+
+    <section class="row g-4">
+      <div class="col-12 col-xl-4">
+        <article class="card app-card">
+          <div class="card-body">
+            <h2 class="h5 fw-bold mb-3" id="doctorFormTitle">
+              Nuevo médico
+            </h2>
+
+            <form id="doctorForm" novalidate>
+              <input type="hidden" id="doctorId" name="doctorId">
+
+              <div class="mb-3">
+                <label for="fullName" class="form-label">Nombre completo</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="fullName"
+                  name="fullName"
+                  required
+                  minlength="3"
+                  placeholder="Ej. Dr. Carlos Ramírez"
+                >
+              </div>
+
+              <div class="mb-3">
+                <label for="email" class="form-label">Correo electrónico</label>
+                <input
+                  type="email"
+                  class="form-control"
+                  id="email"
+                  name="email"
+                  required
+                  placeholder="medico@correo.com"
+                >
+              </div>
+
+              <div class="mb-3">
+                <label for="phone" class="form-label">Teléfono</label>
+                <input
+                  type="tel"
+                  class="form-control"
+                  id="phone"
+                  name="phone"
+                  required
+                  minlength="10"
+                  placeholder="Ej. 4779876543"
+                >
+              </div>
+
+              <div class="mb-3">
+                <label for="specialtyId" class="form-label">Especialidad</label>
+                <select class="form-select" id="specialtyId" name="specialtyId" required>
+                  <option value="">Cargando especialidades...</option>
+                </select>
+                <div class="form-text">
+                  Primero debes registrar especialidades activas.
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="professionalLicense" class="form-label">Cédula profesional</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="professionalLicense"
+                  name="professionalLicense"
+                  required
+                  minlength="5"
+                  placeholder="Ej. 12345678"
+                >
+              </div>
+
+              <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary" id="saveDoctorButton">
+                  Guardar médico
+                </button>
+
+                <button type="button" class="btn btn-outline-secondary d-none" id="cancelEditDoctorButton">
+                  Cancelar edición
+                </button>
+              </div>
+            </form>
+          </div>
+        </article>
+      </div>
+
+      <div class="col-12 col-xl-8">
+        <article class="card app-card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+              <div>
+                <h2 class="h5 fw-bold mb-1">Listado de médicos</h2>
+                <p class="text-muted mb-0">
+                  Busca, filtra, consulta, edita o desactiva médicos.
+                </p>
+              </div>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-12 col-lg-5">
+                <input
+                  type="search"
+                  class="form-control"
+                  id="doctorSearchInput"
+                  placeholder="Buscar por nombre, correo, teléfono o cédula..."
+                >
+              </div>
+
+              <div class="col-12 col-md-6 col-lg-3">
+                <select class="form-select" id="doctorStatusFilter">
+                  <option value="active">Activos</option>
+                  <option value="inactive">Inactivos</option>
+                  <option value="all">Todos</option>
+                </select>
+              </div>
+
+              <div class="col-12 col-md-6 col-lg-4">
+                <select class="form-select" id="doctorSpecialtyFilter">
+                  <option value="all">Todas las especialidades</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead>
+                  <tr>
+                    <th>Médico</th>
+                    <th>Contacto</th>
+                    <th>Especialidad</th>
+                    <th>Cédula</th>
+                    <th>Estado</th>
+                    <th class="table-actions">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="doctorsTableBody">
+                  <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">
+                      Cargando información...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </article>
       </div>
     </section>
   </main>
 
+  <div class="modal fade" id="doctorDetailModal" tabindex="-1" aria-labelledby="doctorDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content app-card">
+        <div class="modal-header">
+          <h2 class="modal-title h5" id="doctorDetailModalLabel">
+            Detalle del médico
+          </h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+
+        <div class="modal-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-4">Nombre completo</dt>
+            <dd class="col-sm-8" id="detailDoctorFullName">-</dd>
+
+            <dt class="col-sm-4">Correo electrónico</dt>
+            <dd class="col-sm-8" id="detailDoctorEmail">-</dd>
+
+            <dt class="col-sm-4">Teléfono</dt>
+            <dd class="col-sm-8" id="detailDoctorPhone">-</dd>
+
+            <dt class="col-sm-4">Especialidad</dt>
+            <dd class="col-sm-8" id="detailDoctorSpecialty">-</dd>
+
+            <dt class="col-sm-4">Cédula profesional</dt>
+            <dd class="col-sm-8" id="detailDoctorProfessionalLicense">-</dd>
+
+            <dt class="col-sm-4">Estado</dt>
+            <dd class="col-sm-8" id="detailDoctorStatus">-</dd>
+
+            <dt class="col-sm-4">Creado</dt>
+            <dd class="col-sm-8" id="detailDoctorCreatedAt">-</dd>
+
+            <dt class="col-sm-4">Actualizado</dt>
+            <dd class="col-sm-8" id="detailDoctorUpdatedAt">-</dd>
+          </dl>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script type="module" src="./assets/js/main.js"></script>
+  <script type="module" src="./assets/js/doctors.js"></script>
 </body>
 </html>

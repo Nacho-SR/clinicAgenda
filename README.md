@@ -1,8 +1,8 @@
 # ClinicAgenda
 
-Sistema web de citas para clínica universitaria desarrollado con JavaScript directo, HTML, CSS, Bootstrap y Firebase.
+Sistema web de citas para clínica universitaria desarrollado con HTML, CSS, JavaScript directo, Bootstrap y Firebase.
 
-## Modalidad utilizada
+## Modalidad Utilizada
 
 Opción B:
 
@@ -13,7 +13,29 @@ Opción B:
 - Firestore Database.
 - Sin React, Vue, Angular ni frameworks similares.
 
-## Módulos del proyecto
+## Alcance
+
+ClinicAgenda administra pacientes, médicos, especialidades y citas médicas.
+
+Los usuarios que inician sesión son usuarios del sistema. Por ahora todos se manejan como administradores (`admin`). Pacientes y médicos son registros administrados dentro del sistema, no usuarios que interactúan con la app.
+
+## Sesión
+
+La sesión usa:
+
+- Firebase Authentication para login, registro, logout y token.
+- `getIdToken()` para obtener el token vigente.
+- `getIdTokenResult()` para leer información del token.
+- Firestore `users/{uid}` para validar perfil, `role` y `active`.
+
+Condiciones para entrar a módulos privados:
+
+- Usuario autenticado.
+- Documento existente en `users/{uid}`.
+- `active` distinto de `false`.
+- `role` igual a `admin`.
+
+## Módulos del Proyecto
 
 - Autenticación.
 - Dashboard privado.
@@ -25,7 +47,7 @@ Opción B:
 ## Estructura
 
 ```txt
-ClinicAgenda/
+clinicAgenda/
 ├── public/
 │   ├── index.html
 │   ├── login.html
@@ -45,25 +67,23 @@ ClinicAgenda/
 │           ├── validators.js
 │           ├── ui.js
 │           ├── main.js
-│           └── dashboard.js
+│           ├── dashboard.js
+│           ├── patients.js
+│           └── specialties.js
+├── CHECKLIST_CLINICAGENDA.md
 ├── firestore.rules
 ├── README.md
 └── .gitignore
 ```
 
-## Configuración inicial
+## Configuración Inicial
 
-1. Crea un proyecto en Firebase.
-2. Activa Authentication con proveedor Email/Password.
-3. Crea una base de datos Firestore.
-4. Copia la configuración web de Firebase.
-5. Pega tus credenciales en:
-
-```js
-public/assets/js/firebase.js
-```
-
-Busca este bloque:
+1. Crear un proyecto en Firebase.
+2. Activar Authentication con proveedor Email/Password.
+3. Crear una base de datos Firestore.
+4. Copiar la configuración web de Firebase.
+5. Crear el archivo local `public/assets/js/firebase-config.js`.
+6. Pegar la configuración con este formato:
 
 ```js
 const firebaseConfig = {
@@ -74,81 +94,30 @@ const firebaseConfig = {
   messagingSenderId: "TU_MESSAGING_SENDER_ID",
   appId: "TU_APP_ID"
 };
+
+export { firebaseConfig };
 ```
 
-6. Publica o copia las reglas de `firestore.rules` en Firebase Console.
-7. Abre `public/index.html` con Live Server.
+El archivo `public/assets/js/firebase-config.js` está ignorado por Git.
 
-## Usuario administrador inicial
+7. Copiar el contenido de `firestore.rules` en Firebase Console > Firestore Database > Rules.
+8. Abrir `public/index.html` con Live Server o un servidor estático local.
 
-El sistema registra usuarios normales desde `register.html`.
+## Usuario Administrador Inicial
 
-Para crear el administrador inicial:
+El registro desde `register.html` crea usuarios del sistema con:
 
-1. Registra el primer usuario.
-2. Ve a Firestore > colección `users`.
-3. Busca el documento cuyo ID coincide con el UID del usuario.
-4. Cambia el campo `role` de `user` a `admin`.
-
-## Ramas GitFlow sugeridas
-
-```bash
-git init
-git add .
-git commit -m "feat: estructura inicial de ClinicAgenda"
-git branch develop
-git checkout develop
-git checkout -b feature/auth
+```txt
+role: admin
+active: true
 ```
 
-Ramas mínimas:
+Si un usuario existe con otro rol por datos anteriores, actualizar su documento en `users/{uid}` y colocar:
 
-- `main`
-- `develop`
-- `feature/auth`
-- `feature/crud-principal`
-- `feature/dashboard`
-- `feature/ui`
-
-## Fases propuestas
-
-### Fase 1 - Base del proyecto y autenticación
-
-- Crear estructura del proyecto.
-- Configurar Firebase SDK.
-- Login.
-- Registro.
-- Logout.
-- Protección de vistas privadas.
-- Dashboard inicial.
-
-### Fase 2 - CRUD de pacientes y especialidades
-
-- Crear, listar, ver detalle, editar, eliminar/desactivar.
-- Buscar y filtrar registros.
-- Validaciones de formularios.
-
-### Fase 3 - CRUD de médicos
-
-- Relacionar médicos con especialidades.
-- Validar cédula profesional y correo único.
-- Activar/desactivar médicos.
-
-### Fase 4 - CRUD de citas
-
-- Crear citas.
-- Evitar citas duplicadas con mismo médico, fecha y hora.
-- Cancelar y finalizar citas.
-- Consultar citas por día.
-- Filtrar por médico.
-
-### Fase 5 - Dashboard, UI/UX y documentación
-
-- Estadísticas del día.
-- Citas programadas.
-- Citas canceladas.
-- Total de pacientes.
-- Capturas, video demo, reglas Firestore y documento técnico.
+```txt
+role: admin
+active: true
+```
 
 ## Colecciones Firestore
 
@@ -158,7 +127,7 @@ Ramas mínimas:
 - `specialties`
 - `appointments`
 
-## Campos globales por registro
+## Campos Globales por Registro
 
 Cada registro operativo debe incluir:
 
@@ -168,6 +137,21 @@ Cada registro operativo debe incluir:
 - `createdBy`.
 - `active`.
 
-## Estado actual
+## Estado Actual
 
-Fase 1 creada: estructura base, autenticación, protección de vistas y dashboard inicial.
+- Estructura base creada.
+- Autenticación con token y usuario administrador implementada.
+- Protección de vistas privadas implementada.
+- Dashboard inicial implementado.
+- CRUD de pacientes implementado.
+- CRUD de especialidades implementado.
+- CRUD de médicos pendiente.
+- CRUD de citas pendiente.
+- Reglas Firestore base agregadas.
+- Checklist de avance agregado.
+
+## Documentación de Avance
+
+El plan de trabajo, avance por bloques, criterios de la guía y ruta de commits están en:
+
+[CHECKLIST_CLINICAGENDA.md](./CHECKLIST_CLINICAGENDA.md)
