@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Especialidades | ClinicAgenda</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/css/styles.css">
+</head>
+<body data-private="true">
+
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm">
+    <div class="container-fluid">
+      <a class="navbar-brand fw-bold" href="./dashboard.html">ClinicAgenda</a>
+
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarClinic"
+        aria-controls="navbarClinic"
+        aria-expanded="false"
+        aria-label="Abrir navegación"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarClinic">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" href="./dashboard.html">Dashboard</a></li>
+          <li class="nav-item"><a class="nav-link" href="./patients.html">Pacientes</a></li>
+          <li class="nav-item"><a class="nav-link" href="./doctors.html">Médicos</a></li>
+          <li class="nav-item"><a class="nav-link" href="./specialties.html">Especialidades</a></li>
+          <li class="nav-item"><a class="nav-link" href="./appointments.html">Citas</a></li>
+        </ul>
+
+        <div class="d-flex align-items-center gap-2 text-white">
+          <span id="currentUserEmail" class="small d-none d-md-inline"></span>
+          <button class="btn btn-outline-light btn-sm" id="logoutButton">
+            Salir
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-4">
+    <header class="mb-4 d-flex justify-content-between align-items-start flex-wrap gap-2">
+      <div>
+        <h1 class="h3 fw-bold" id="pageTitle">Nueva especialidad</h1>
+        <p class="text-muted mb-0">
+          Captura la información de la especialidad médica.
+        </p>
+      </div>
+
+      <a href="./specialties.html" class="btn btn-outline-secondary">
+        Volver al listado
+      </a>
+    </header>
+
+    <div id="alertContainer"></div>
+
+    <section class="card app-card">
+      <div class="card-body">
+        <form id="specialtyForm" novalidate>
+          <input type="hidden" id="specialtyId" name="specialtyId">
+
+          <div class="mb-3">
+            <label for="name" class="form-label">Nombre de la especialidad</label>
+            <input
+              type="text"
+              class="form-control"
+              id="name"
+              name="name"
+              placeholder="Ej. Medicina general"
+              required
+              minlength="3"
+            >
+          </div>
+
+          <div class="mb-3">
+            <label for="description" class="form-label">Descripción</label>
+            <textarea
+              class="form-control"
+              id="description"
+              name="description"
+              rows="4"
+              placeholder="Descripción breve de la especialidad"
+            ></textarea>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2 flex-wrap">
+            <a href="./specialties.html" class="btn btn-outline-secondary">
+              Cancelar
+            </a>
+
+            <button type="submit" class="btn btn-primary" id="saveSpecialtyButton">
+              Guardar especialidad
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module" src="./assets/js/main.js"></script>
+  <script type="module" src="./assets/js/specialty-form.js"></script>
+</body>
+</html>

@@ -1,18 +1,12 @@
 import { requireAuth } from './auth.js';
 
 import {
-  createRecord,
-  updateRecord,
   deactivateRecord,
-  getRecords,
-  recordExists
+  getRecords
 } from './firestore.js';
-
-import { validateFields } from './validators.js';
 
 import {
   showAlert,
-  setButtonLoading,
   escapeHTML,
   normalizeText,
   formatTimestamp,
@@ -26,13 +20,6 @@ const COLLECTION_NAME = 'specialties';
 let specialties = [];
 let detailModal = null;
 
-const form = document.getElementById('specialtyForm');
-const formTitle = document.getElementById('specialtyFormTitle');
-const specialtyIdInput = document.getElementById('specialtyId');
-const nameInput = document.getElementById('name');
-const descriptionInput = document.getElementById('description');
-const saveButton = document.getElementById('saveSpecialtyButton');
-const cancelEditButton = document.getElementById('cancelEditSpecialtyButton');
 const searchInput = document.getElementById('specialtySearchInput');
 const statusFilter = document.getElementById('specialtyStatusFilter');
 const tableBody = document.getElementById('specialtiesTableBody');
@@ -43,13 +30,22 @@ const tableBody = document.getElementById('specialtiesTableBody');
 function initSpecialtiesPage() {
   detailModal = new bootstrap.Modal(document.getElementById('specialtyDetailModal'));
 
-  form.addEventListener('submit', handleSubmit);
-  cancelEditButton.addEventListener('click', resetForm);
+  showStoredAlert();
+
   searchInput.addEventListener('input', renderSpecialties);
   statusFilter.addEventListener('change', renderSpecialties);
   tableBody.addEventListener('click', handleTableClick);
 
   loadSpecialties();
+}
+
+function showStoredAlert() {
+  const message = sessionStorage.getItem('clinicAgendaAlert');
+
+  if (!message) return;
+
+  showAlert(message, 'success');
+  sessionStorage.removeItem('clinicAgendaAlert');
 }
 
 /**
@@ -146,76 +142,6 @@ function renderSpecialties() {
 }
 
 /**
- * Construye el objeto que se enviará a Firestore.
- */
-function buildSpecialtyPayload() {
-  const name = nameInput.value.trim();
-  const description = descriptionInput.value.trim();
-
-  return {
-    name,
-    nameNormalized: normalizeText(name),
-    description
-  };
-}
-
-/**
- * Crea o actualiza una especialidad.
- */
-async function handleSubmit(event) {
-  event.preventDefault();
-
-  const editingId = specialtyIdInput.value || null;
-
-  const payload = buildSpecialtyPayload();
-
-  const errors = validateFields([
-    {
-      label: 'Nombre de la especialidad',
-      value: payload.name,
-      rules: { required: true, minLength: 3 }
-    }
-  ]);
-
-  if (errors.length > 0) {
-    showAlert(errors.join('<br>'), 'danger');
-    return;
-  }
-
-  try {
-    setButtonLoading(saveButton, true, 'Guardando...');
-
-    const duplicated = await recordExists({
-      collectionName: COLLECTION_NAME,
-      fieldName: 'nameNormalized',
-      value: payload.nameNormalized,
-      excludeId: editingId
-    });
-
-    if (duplicated) {
-      showAlert('Ya existe una especialidad activa con ese nombre.', 'warning');
-      return;
-    }
-
-    if (editingId) {
-      await updateRecord(COLLECTION_NAME, editingId, payload);
-      showAlert('Especialidad actualizada correctamente.', 'success');
-    } else {
-      await createRecord(COLLECTION_NAME, payload);
-      showAlert('Especialidad registrada correctamente.', 'success');
-    }
-
-    resetForm();
-    await loadSpecialties();
-  } catch (error) {
-    console.error(error);
-    showAlert('No fue posible guardar la especialidad.', 'danger');
-  } finally {
-    setButtonLoading(saveButton, false);
-  }
-}
-
-/**
  * Controla los botones de la tabla mediante delegación de eventos.
  */
 function handleTableClick(event) {
@@ -269,25 +195,7 @@ function handleDetail(id) {
  * Carga los datos en el formulario para editar.
  */
 function handleEdit(id) {
-  const specialty = findSpecialtyById(id);
-
-  if (!specialty) {
-    showAlert('No se encontró la especialidad seleccionada.', 'warning');
-    return;
-  }
-
-  specialtyIdInput.value = specialty.id;
-  nameInput.value = specialty.name || '';
-  descriptionInput.value = specialty.description || '';
-
-  formTitle.textContent = 'Editar especialidad';
-  saveButton.textContent = 'Actualizar especialidad';
-  cancelEditButton.classList.remove('d-none');
-
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth'
-  });
+  window.location.href = `./specialty-form.html?id=${encodeURIComponent(id)}`;
 }
 
 /**
@@ -313,18 +221,6 @@ async function handleDeactivate(id) {
     console.error(error);
     showAlert('No fue posible desactivar la especialidad.', 'danger');
   }
-}
-
-/**
- * Limpia el formulario y vuelve al modo creación.
- */
-function resetForm() {
-  form.reset();
-  specialtyIdInput.value = '';
-
-  formTitle.textContent = 'Nueva especialidad';
-  saveButton.textContent = 'Guardar especialidad';
-  cancelEditButton.classList.add('d-none');
 }
 
 requireAuth(() => {
