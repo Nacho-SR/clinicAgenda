@@ -195,7 +195,7 @@ function handleDetail(id) {
  * Carga los datos en el formulario para editar.
  */
 function handleEdit(id) {
-  window.location.href = `./specialty-form.html?id=${encodeURIComponent(id)}`;
+  window.location.href = `./specialties-form.html?id=${encodeURIComponent(id)}`;
 }
 
 /**

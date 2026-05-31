@@ -55,104 +55,7 @@
     <div id="alertContainer"></div>
 
     <section class="row g-4">
-      <div class="col-12 col-xl-4">
-        <article class="card app-card">
-          <div class="card-body">
-            <h2 class="h5 fw-bold mb-3" id="patientFormTitle">
-              Nuevo paciente
-            </h2>
-
-            <form id="patientForm" novalidate>
-              <input type="hidden" id="patientId" name="patientId">
-
-              <div class="mb-3">
-                <label for="fullName" class="form-label">Nombre completo</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="fullName"
-                  name="fullName"
-                  required
-                  minlength="3"
-                  placeholder="Ej. Ana López Martínez"
-                >
-              </div>
-
-              <div class="mb-3">
-                <label for="email" class="form-label">Correo electrónico</label>
-                <input
-                  type="email"
-                  class="form-control"
-                  id="email"
-                  name="email"
-                  required
-                  placeholder="paciente@correo.com"
-                >
-              </div>
-
-              <div class="mb-3">
-                <label for="phone" class="form-label">Teléfono</label>
-                <input
-                  type="tel"
-                  class="form-control"
-                  id="phone"
-                  name="phone"
-                  required
-                  minlength="10"
-                  placeholder="Ej. 4771234567"
-                >
-              </div>
-
-              <div class="mb-3">
-                <label for="birthDate" class="form-label">Fecha de nacimiento</label>
-                <input
-                  type="date"
-                  class="form-control"
-                  id="birthDate"
-                  name="birthDate"
-                  required
-                >
-              </div>
-
-              <div class="mb-3">
-                <label for="gender" class="form-label">Género</label>
-                <select class="form-select" id="gender" name="gender" required>
-                  <option value="">Selecciona una opción</option>
-                  <option value="female">Femenino</option>
-                  <option value="male">Masculino</option>
-                  <option value="other">Otro</option>
-                  <option value="not_specified">Prefiere no decirlo</option>
-                </select>
-              </div>
-
-              <div class="mb-3">
-                <label for="address" class="form-label">Dirección</label>
-                <textarea
-                  class="form-control"
-                  id="address"
-                  name="address"
-                  rows="3"
-                  required
-                  minlength="5"
-                  placeholder="Dirección del paciente"
-                ></textarea>
-              </div>
-
-              <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-primary" id="savePatientButton">
-                  Guardar paciente
-                </button>
-
-                <button type="button" class="btn btn-outline-secondary d-none" id="cancelEditPatientButton">
-                  Cancelar edición
-                </button>
-              </div>
-            </form>
-          </div>
-        </article>
-      </div>
-
-      <div class="col-12 col-xl-8">
+      <div class="col-12">
         <article class="card app-card">
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
@@ -160,6 +63,10 @@
                 <h2 class="h5 fw-bold mb-1">Listado de pacientes</h2>
                 <p class="text-muted mb-0">Busca, filtra, consulta, edita o desactiva pacientes.</p>
               </div>
+
+              <a href="./patient-form.html" class="btn btn-primary">
+                Nuevo paciente
+              </a>
             </div>
 
             <div class="row g-2 mb-3">

@@ -1,18 +1,12 @@
 import { requireAuth } from './auth.js';
 
 import {
-  createRecord,
-  updateRecord,
   deactivateRecord,
-  getRecords,
-  recordExists
+  getRecords
 } from './firestore.js';
-
-import { validateFields } from './validators.js';
 
 import {
   showAlert,
-  setButtonLoading,
   escapeHTML,
   normalizeText,
   formatDate,
@@ -27,17 +21,6 @@ const COLLECTION_NAME = 'patients';
 let patients = [];
 let detailModal = null;
 
-const form = document.getElementById('patientForm');
-const formTitle = document.getElementById('patientFormTitle');
-const patientIdInput = document.getElementById('patientId');
-const fullNameInput = document.getElementById('fullName');
-const emailInput = document.getElementById('email');
-const phoneInput = document.getElementById('phone');
-const birthDateInput = document.getElementById('birthDate');
-const genderInput = document.getElementById('gender');
-const addressInput = document.getElementById('address');
-const saveButton = document.getElementById('savePatientButton');
-const cancelEditButton = document.getElementById('cancelEditPatientButton');
 const searchInput = document.getElementById('patientSearchInput');
 const statusFilter = document.getElementById('patientStatusFilter');
 const genderFilter = document.getElementById('patientGenderFilter');
@@ -59,14 +42,23 @@ const genderLabels = {
 function initPatientsPage() {
   detailModal = new bootstrap.Modal(document.getElementById('patientDetailModal'));
 
-  form.addEventListener('submit', handleSubmit);
-  cancelEditButton.addEventListener('click', resetForm);
+  showStoredAlert();
+
   searchInput.addEventListener('input', renderPatients);
   statusFilter.addEventListener('change', renderPatients);
   genderFilter.addEventListener('change', renderPatients);
   tableBody.addEventListener('click', handleTableClick);
 
   loadPatients();
+}
+
+function showStoredAlert() {
+  const message = sessionStorage.getItem('clinicAgendaAlert');
+
+  if (!message) return;
+
+  showAlert(message, 'success');
+  sessionStorage.removeItem('clinicAgendaAlert');
 }
 
 /**
@@ -178,114 +170,6 @@ function renderPatients() {
 }
 
 /**
- * Construye el objeto que se enviará a Firestore.
- */
-function buildPatientPayload() {
-  const fullName = fullNameInput.value.trim();
-  const email = emailInput.value.trim().toLowerCase();
-  const phone = phoneInput.value.trim();
-  const birthDate = birthDateInput.value;
-  const gender = genderInput.value;
-  const address = addressInput.value.trim();
-
-  return {
-    fullName,
-    fullNameNormalized: normalizeText(fullName),
-    email,
-    emailNormalized: normalizeText(email),
-    phone,
-    birthDate,
-    gender,
-    address
-  };
-}
-
-/**
- * Crea o actualiza pacientes.
- */
-async function handleSubmit(event) {
-  event.preventDefault();
-
-  const editingId = patientIdInput.value || null;
-  const payload = buildPatientPayload();
-
-  const errors = validateFields([
-    {
-      label: 'Nombre completo',
-      value: payload.fullName,
-      rules: { required: true, minLength: 3 }
-    },
-    {
-      label: 'Correo electrónico',
-      value: payload.email,
-      rules: { required: true, email: true }
-    },
-    {
-      label: 'Teléfono',
-      value: payload.phone,
-      rules: { required: true, minLength: 10 }
-    },
-    {
-      label: 'Fecha de nacimiento',
-      value: payload.birthDate,
-      rules: { required: true, date: true }
-    },
-    {
-      label: 'Género',
-      value: payload.gender,
-      rules: { required: true }
-    },
-    {
-      label: 'Dirección',
-      value: payload.address,
-      rules: { required: true, minLength: 5 }
-    }
-  ]);
-
-  if (errors.length > 0) {
-    showAlert(errors.join('<br>'), 'danger');
-    return;
-  }
-
-  if (isFutureDate(payload.birthDate)) {
-    showAlert('La fecha de nacimiento no puede ser futura.', 'danger');
-    return;
-  }
-
-  try {
-    setButtonLoading(saveButton, true, 'Guardando...');
-
-    const duplicatedEmail = await recordExists({
-      collectionName: COLLECTION_NAME,
-      fieldName: 'emailNormalized',
-      value: payload.emailNormalized,
-      excludeId: editingId
-    });
-
-    if (duplicatedEmail) {
-      showAlert('Ya existe un paciente activo con ese correo electrónico.', 'warning');
-      return;
-    }
-
-    if (editingId) {
-      await updateRecord(COLLECTION_NAME, editingId, payload);
-      showAlert('Paciente actualizado correctamente.', 'success');
-    } else {
-      await createRecord(COLLECTION_NAME, payload);
-      showAlert('Paciente registrado correctamente.', 'success');
-    }
-
-    resetForm();
-    await loadPatients();
-  } catch (error) {
-    console.error(error);
-    showAlert('No fue posible guardar el paciente.', 'danger');
-  } finally {
-    setButtonLoading(saveButton, false);
-  }
-}
-
-/**
  * Controla los botones de la tabla.
  */
 function handleTableClick(event) {
@@ -343,29 +227,7 @@ function handleDetail(id) {
  * Carga el paciente en el formulario para editar.
  */
 function handleEdit(id) {
-  const patient = findPatientById(id);
-
-  if (!patient) {
-    showAlert('No se encontró el paciente seleccionado.', 'warning');
-    return;
-  }
-
-  patientIdInput.value = patient.id;
-  fullNameInput.value = patient.fullName || '';
-  emailInput.value = patient.email || '';
-  phoneInput.value = patient.phone || '';
-  birthDateInput.value = patient.birthDate || '';
-  genderInput.value = patient.gender || '';
-  addressInput.value = patient.address || '';
-
-  formTitle.textContent = 'Editar paciente';
-  saveButton.textContent = 'Actualizar paciente';
-  cancelEditButton.classList.remove('d-none');
-
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth'
-  });
+  window.location.href = `./patient-form.html?id=${encodeURIComponent(id)}`;
 }
 
 /**
@@ -394,37 +256,10 @@ async function handleDeactivate(id) {
 }
 
 /**
- * Limpia el formulario y vuelve al modo creación.
- */
-function resetForm() {
-  form.reset();
-  patientIdInput.value = '';
-
-  formTitle.textContent = 'Nuevo paciente';
-  saveButton.textContent = 'Guardar paciente';
-  cancelEditButton.classList.add('d-none');
-}
-
-/**
  * Traduce el valor interno de género a texto legible.
  */
 function getGenderLabel(gender) {
   return genderLabels[gender] || '-';
-}
-
-/**
- * Valida que la fecha de nacimiento no sea futura.
- */
-function isFutureDate(value) {
-  if (!value) return false;
-
-  const selectedDate = new Date(`${value}T00:00:00`);
-  const today = new Date();
-
-  selectedDate.setHours(0, 0, 0, 0);
-  today.setHours(0, 0, 0, 0);
-
-  return selectedDate > today;
 }
 
 requireAuth(() => {
