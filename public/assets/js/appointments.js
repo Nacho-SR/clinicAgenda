@@ -22,6 +22,7 @@ import {
 } from './ui.js';
 
 const COLLECTION_NAME = 'appointments';
+const APPOINTMENT_MARGIN_MINUTES = 30;
 
 let appointments = [];
 let patients = [];
@@ -539,16 +540,19 @@ async function handleSubmit(event) {
     return;
   }
 
-  const duplicatedSlot = appointmentSlotExists({
+  const conflictingAppointment = appointmentConflictsWithMargin({
     doctorId: payload.doctorId,
     appointmentDate: payload.appointmentDate,
     appointmentTime: payload.appointmentTime,
     excludeId: editingId
   });
 
-  if (duplicatedSlot) {
+  if (conflictingAppointment) {
     showAlert(
-      'Ya existe una cita programada con ese médico en la misma fecha y hora.',
+      `No se puede agendar la cita. El médico ${escapeHTML(getDoctorName(payload.doctorId))}
+      ya tiene una cita programada el ${formatDate(conflictingAppointment.appointmentDate)}
+      a las ${escapeHTML(conflictingAppointment.appointmentTime)}.
+      Debe respetarse un margen de ${APPOINTMENT_MARGIN_MINUTES} minutos antes o después.`,
       'warning'
     );
     return;
@@ -805,13 +809,22 @@ function resetForm() {
  *
  * Así, si una cita fue cancelada, el horario puede reutilizarse.
  */
-function appointmentSlotExists({
+function appointmentConflictsWithMargin({
   doctorId,
   appointmentDate,
   appointmentTime,
   excludeId = null
 }) {
-  return appointments.some((appointment) => {
+  const newAppointmentDateTime = buildAppointmentDateTime(
+    appointmentDate,
+    appointmentTime
+  );
+
+  if (!newAppointmentDateTime) {
+    return null;
+  }
+
+  return appointments.find((appointment) => {
     if (excludeId && appointment.id === excludeId) {
       return false;
     }
@@ -824,12 +837,43 @@ function appointmentSlotExists({
       return false;
     }
 
-    return (
-      appointment.doctorId === doctorId &&
-      appointment.appointmentDate === appointmentDate &&
-      appointment.appointmentTime === appointmentTime
+    if (appointment.doctorId !== doctorId) {
+      return false;
+    }
+
+    if (appointment.appointmentDate !== appointmentDate) {
+      return false;
+    }
+
+    const existingAppointmentDateTime = buildAppointmentDateTime(
+      appointment.appointmentDate,
+      appointment.appointmentTime
     );
-  });
+
+    if (!existingAppointmentDateTime) {
+      return false;
+    }
+
+    const differenceInMinutes = Math.abs(
+      newAppointmentDateTime - existingAppointmentDateTime
+    ) / 60000;
+
+    return differenceInMinutes <= APPOINTMENT_MARGIN_MINUTES;
+  }) || null;
+}
+
+function buildAppointmentDateTime(dateValue, timeValue) {
+  if (!dateValue || !timeValue) {
+    return null;
+  }
+
+  const dateTime = new Date(`${dateValue}T${timeValue}`);
+
+  if (Number.isNaN(dateTime.getTime())) {
+    return null;
+  }
+
+  return dateTime;
 }
 
 /**
