@@ -1,17 +1,13 @@
 import { requireAuth } from './auth.js';
 
 import {
-  createRecord,
   updateRecord,
   deactivateRecord,
   getRecords
 } from './firestore.js';
 
-import { validateFields } from './validators.js';
-
 import {
   showAlert,
-  setButtonLoading,
   escapeHTML,
   normalizeText,
   formatDate,
@@ -22,7 +18,6 @@ import {
 } from './ui.js';
 
 const COLLECTION_NAME = 'appointments';
-const APPOINTMENT_MARGIN_MINUTES = 30;
 
 let appointments = [];
 let patients = [];
@@ -34,18 +29,6 @@ let activeDoctors = [];
 let activeSpecialties = [];
 
 let detailModal = null;
-
-const form = document.getElementById('appointmentForm');
-const formTitle = document.getElementById('appointmentFormTitle');
-const appointmentIdInput = document.getElementById('appointmentId');
-const patientIdInput = document.getElementById('patientId');
-const specialtyIdInput = document.getElementById('specialtyId');
-const doctorIdInput = document.getElementById('doctorId');
-const appointmentDateInput = document.getElementById('appointmentDate');
-const appointmentTimeInput = document.getElementById('appointmentTime');
-const reasonInput = document.getElementById('reason');
-const saveButton = document.getElementById('saveAppointmentButton');
-const cancelEditButton = document.getElementById('cancelEditAppointmentButton');
 
 const searchInput = document.getElementById('appointmentSearchInput');
 const dateFilter = document.getElementById('appointmentDateFilter');
@@ -71,14 +54,7 @@ const appointmentStatusLabels = {
 function initAppointmentsPage() {
   detailModal = new bootstrap.Modal(document.getElementById('appointmentDetailModal'));
 
-  appointmentDateInput.min = getTodayISODate();
-
-  form.addEventListener('submit', handleSubmit);
-  cancelEditButton.addEventListener('click', resetForm);
-
-  specialtyIdInput.addEventListener('change', () => {
-    renderDoctorOptionsBySpecialty(specialtyIdInput.value);
-  });
+  showStoredAlert();
 
   searchInput.addEventListener('input', renderAppointments);
   dateFilter.addEventListener('change', renderAppointments);
@@ -101,6 +77,15 @@ function initAppointmentsPage() {
   tableBody.addEventListener('click', handleTableClick);
 
   loadInitialData();
+}
+
+function showStoredAlert() {
+  const message = sessionStorage.getItem('clinicAgendaAlert');
+
+  if (!message) return;
+
+  showAlert(message, 'success');
+  sessionStorage.removeItem('clinicAgendaAlert');
 }
 
 /**
@@ -129,143 +114,13 @@ async function loadInitialData() {
     doctors = doctorsResult;
     specialties = specialtiesResult;
 
-    activePatients = patients.filter((patient) => patient.active !== false);
-    activeDoctors = doctors.filter((doctor) => doctor.active !== false);
-    activeSpecialties = specialties.filter((specialty) => specialty.active !== false);
-
-    renderFormOptions();
     renderFilterOptions();
     renderAppointments();
-    validatePrerequisites();
   } catch (error) {
     console.error(error);
     showAlert('No fue posible cargar el módulo de citas.', 'danger');
     renderTableEmpty(tableBody, 'No se pudieron cargar los registros.', 6);
   }
-}
-
-/**
- * Valida si existen los datos mínimos para agendar una cita.
- */
-function validatePrerequisites() {
-  const missing = [];
-
-  if (activePatients.length === 0) missing.push('pacientes activos');
-  if (activeSpecialties.length === 0) missing.push('especialidades activas');
-  if (activeDoctors.length === 0) missing.push('médicos activos');
-
-  if (missing.length > 0) {
-    saveButton.disabled = true;
-
-    showAlert(
-      `Para crear citas necesitas registrar primero: ${missing.join(', ')}. 
-      Puedes hacerlo desde los módulos Pacientes, Especialidades y Médicos.`,
-      'warning'
-    );
-
-    return;
-  }
-
-  saveButton.disabled = false;
-}
-
-/**
- * Llena los selects del formulario.
- */
-function renderFormOptions() {
-  renderPatientOptions();
-  renderSpecialtyOptions();
-  renderDoctorOptionsBySpecialty(specialtyIdInput.value);
-}
-
-/**
- * Llena el select de pacientes activos.
- */
-function renderPatientOptions() {
-  if (activePatients.length === 0) {
-    patientIdInput.innerHTML = '<option value="">No hay pacientes activos</option>';
-    patientIdInput.disabled = true;
-    return;
-  }
-
-  patientIdInput.disabled = false;
-
-  const options = activePatients.map((patient) => {
-    return `
-      <option value="${patient.id}">
-        ${escapeHTML(patient.fullName)}
-      </option>
-    `;
-  }).join('');
-
-  patientIdInput.innerHTML = `
-    <option value="">Selecciona un paciente</option>
-    ${options}
-  `;
-}
-
-/**
- * Llena el select de especialidades activas.
- */
-function renderSpecialtyOptions() {
-  if (activeSpecialties.length === 0) {
-    specialtyIdInput.innerHTML = '<option value="">No hay especialidades activas</option>';
-    specialtyIdInput.disabled = true;
-    return;
-  }
-
-  specialtyIdInput.disabled = false;
-
-  const options = activeSpecialties.map((specialty) => {
-    return `
-      <option value="${specialty.id}">
-        ${escapeHTML(specialty.name)}
-      </option>
-    `;
-  }).join('');
-
-  specialtyIdInput.innerHTML = `
-    <option value="">Selecciona una especialidad</option>
-    ${options}
-  `;
-}
-
-/**
- * Llena el select de médicos según la especialidad seleccionada.
- */
-function renderDoctorOptionsBySpecialty(specialtyId, selectedDoctorId = '') {
-  if (!specialtyId) {
-    doctorIdInput.innerHTML = '<option value="">Selecciona una especialidad primero</option>';
-    doctorIdInput.disabled = true;
-    return;
-  }
-
-  const doctorsBySpecialty = activeDoctors.filter((doctor) => {
-    return doctor.specialtyId === specialtyId;
-  });
-
-  if (doctorsBySpecialty.length === 0) {
-    doctorIdInput.innerHTML = '<option value="">No hay médicos activos para esta especialidad</option>';
-    doctorIdInput.disabled = true;
-    return;
-  }
-
-  doctorIdInput.disabled = false;
-
-  const options = doctorsBySpecialty.map((doctor) => {
-    const selected = doctor.id === selectedDoctorId ? 'selected' : '';
-
-    return `
-      <option value="${doctor.id}" ${selected}>
-        ${escapeHTML(doctor.fullName)}
-      </option>
-    `;
-  }).join('');
-
-  doctorIdInput.innerHTML = `
-    <option value="">Selecciona un médico</option>
-    ${options}
-  `;
 }
 
 /**
@@ -447,139 +302,6 @@ function renderAppointments() {
 }
 
 /**
- * Construye el objeto de cita para Firestore.
- */
-function buildAppointmentPayload() {
-  const patientId = patientIdInput.value;
-  const specialtyId = specialtyIdInput.value;
-  const doctorId = doctorIdInput.value;
-  const appointmentDate = appointmentDateInput.value;
-  const appointmentTime = appointmentTimeInput.value;
-  const reason = reasonInput.value.trim();
-
-  return {
-    patientId,
-    specialtyId,
-    doctorId,
-    appointmentDate,
-    appointmentTime,
-    reason,
-    status: 'scheduled'
-  };
-}
-
-/**
- * Crea o actualiza una cita médica.
- */
-async function handleSubmit(event) {
-  event.preventDefault();
-
-  const editingId = appointmentIdInput.value || null;
-  const payload = buildAppointmentPayload();
-
-  const errors = validateFields([
-    {
-      label: 'Paciente',
-      value: payload.patientId,
-      rules: { required: true }
-    },
-    {
-      label: 'Especialidad',
-      value: payload.specialtyId,
-      rules: { required: true }
-    },
-    {
-      label: 'Médico',
-      value: payload.doctorId,
-      rules: { required: true }
-    },
-    {
-      label: 'Fecha de la cita',
-      value: payload.appointmentDate,
-      rules: { required: true, date: true }
-    },
-    {
-      label: 'Hora de la cita',
-      value: payload.appointmentTime,
-      rules: { required: true, time: true }
-    },
-    {
-      label: 'Motivo de la cita',
-      value: payload.reason,
-      rules: { required: true, minLength: 5 }
-    }
-  ]);
-
-  if (errors.length > 0) {
-    showAlert(errors.join('<br>'), 'danger');
-    return;
-  }
-
-  if (!isActivePatient(payload.patientId)) {
-    showAlert('El paciente seleccionado no existe o está inactivo.', 'danger');
-    return;
-  }
-
-  if (!isActiveSpecialty(payload.specialtyId)) {
-    showAlert('La especialidad seleccionada no existe o está inactiva.', 'danger');
-    return;
-  }
-
-  if (!isActiveDoctor(payload.doctorId)) {
-    showAlert('El médico seleccionado no existe o está inactivo.', 'danger');
-    return;
-  }
-
-  if (!doctorBelongsToSpecialty(payload.doctorId, payload.specialtyId)) {
-    showAlert('El médico seleccionado no pertenece a la especialidad indicada.', 'danger');
-    return;
-  }
-
-  if (isPastDateTime(payload.appointmentDate, payload.appointmentTime)) {
-    showAlert('No puedes agendar una cita en una fecha u hora pasada.', 'danger');
-    return;
-  }
-
-  const conflictingAppointment = appointmentConflictsWithMargin({
-    doctorId: payload.doctorId,
-    appointmentDate: payload.appointmentDate,
-    appointmentTime: payload.appointmentTime,
-    excludeId: editingId
-  });
-
-  if (conflictingAppointment) {
-    showAlert(
-      `No se puede agendar la cita. El médico ${escapeHTML(getDoctorName(payload.doctorId))}
-      ya tiene una cita programada el ${formatDate(conflictingAppointment.appointmentDate)}
-      a las ${escapeHTML(conflictingAppointment.appointmentTime)}.
-      Debe respetarse un margen de ${APPOINTMENT_MARGIN_MINUTES} minutos antes o después.`,
-      'warning'
-    );
-    return;
-  }
-
-  try {
-    setButtonLoading(saveButton, true, 'Guardando...');
-
-    if (editingId) {
-      await updateRecord(COLLECTION_NAME, editingId, payload);
-      showAlert('Cita actualizada correctamente.', 'success');
-    } else {
-      await createRecord(COLLECTION_NAME, payload);
-      showAlert('Cita registrada correctamente.', 'success');
-    }
-
-    resetForm();
-    await loadInitialData();
-  } catch (error) {
-    console.error(error);
-    showAlert('No fue posible guardar la cita.', 'danger');
-  } finally {
-    setButtonLoading(saveButton, false);
-  }
-}
-
-/**
  * Controla los botones de la tabla.
  */
 function handleTableClick(event) {
@@ -661,25 +383,7 @@ function handleEdit(id) {
     return;
   }
 
-  appointmentIdInput.value = appointment.id;
-  patientIdInput.value = isActivePatient(appointment.patientId) ? appointment.patientId : '';
-  specialtyIdInput.value = isActiveSpecialty(appointment.specialtyId) ? appointment.specialtyId : '';
-
-  renderDoctorOptionsBySpecialty(appointment.specialtyId, appointment.doctorId);
-
-  doctorIdInput.value = isActiveDoctor(appointment.doctorId) ? appointment.doctorId : '';
-  appointmentDateInput.value = appointment.appointmentDate || '';
-  appointmentTimeInput.value = appointment.appointmentTime || '';
-  reasonInput.value = appointment.reason || '';
-
-  formTitle.textContent = 'Editar cita';
-  saveButton.textContent = 'Actualizar cita';
-  cancelEditButton.classList.remove('d-none');
-
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth'
-  });
+  window.location.href = `./appointment-form.html?id=${encodeURIComponent(id)}`;
 }
 
 /**
@@ -786,97 +490,6 @@ async function handleDeactivate(id) {
 }
 
 /**
- * Limpia el formulario.
- */
-function resetForm() {
-  form.reset();
-  appointmentIdInput.value = '';
-
-  formTitle.textContent = 'Nueva cita';
-  saveButton.textContent = 'Guardar cita';
-  cancelEditButton.classList.add('d-none');
-
-  renderFormOptions();
-  validatePrerequisites();
-}
-
-/**
- * Revisa si existe una cita programada con el mismo médico, fecha y hora.
- *
- * Se toma en cuenta solo:
- * - active !== false
- * - status === scheduled
- *
- * Así, si una cita fue cancelada, el horario puede reutilizarse.
- */
-function appointmentConflictsWithMargin({
-  doctorId,
-  appointmentDate,
-  appointmentTime,
-  excludeId = null
-}) {
-  const newAppointmentDateTime = buildAppointmentDateTime(
-    appointmentDate,
-    appointmentTime
-  );
-
-  if (!newAppointmentDateTime) {
-    return null;
-  }
-
-  return appointments.find((appointment) => {
-    if (excludeId && appointment.id === excludeId) {
-      return false;
-    }
-
-    if (appointment.active === false) {
-      return false;
-    }
-
-    if (appointment.status !== 'scheduled') {
-      return false;
-    }
-
-    if (appointment.doctorId !== doctorId) {
-      return false;
-    }
-
-    if (appointment.appointmentDate !== appointmentDate) {
-      return false;
-    }
-
-    const existingAppointmentDateTime = buildAppointmentDateTime(
-      appointment.appointmentDate,
-      appointment.appointmentTime
-    );
-
-    if (!existingAppointmentDateTime) {
-      return false;
-    }
-
-    const differenceInMinutes = Math.abs(
-      newAppointmentDateTime - existingAppointmentDateTime
-    ) / 60000;
-
-    return differenceInMinutes <= APPOINTMENT_MARGIN_MINUTES;
-  }) || null;
-}
-
-function buildAppointmentDateTime(dateValue, timeValue) {
-  if (!dateValue || !timeValue) {
-    return null;
-  }
-
-  const dateTime = new Date(`${dateValue}T${timeValue}`);
-
-  if (Number.isNaN(dateTime.getTime())) {
-    return null;
-  }
-
-  return dateTime;
-}
-
-/**
  * Valida si una cita puede cambiar de estado.
  */
 function canChangeScheduledAppointment(appointment) {
@@ -954,50 +567,6 @@ function getSpecialtyName(specialtyId) {
   }
 
   return specialty.name;
-}
-
-/**
- * Valida paciente activo.
- */
-function isActivePatient(patientId) {
-  return activePatients.some((patient) => patient.id === patientId);
-}
-
-/**
- * Valida médico activo.
- */
-function isActiveDoctor(doctorId) {
-  return activeDoctors.some((doctor) => doctor.id === doctorId);
-}
-
-/**
- * Valida especialidad activa.
- */
-function isActiveSpecialty(specialtyId) {
-  return activeSpecialties.some((specialty) => specialty.id === specialtyId);
-}
-
-/**
- * Valida que el médico corresponda a la especialidad seleccionada.
- */
-function doctorBelongsToSpecialty(doctorId, specialtyId) {
-  const doctor = doctors.find((item) => item.id === doctorId);
-
-  if (!doctor) return false;
-
-  return doctor.specialtyId === specialtyId;
-}
-
-/**
- * Evita agendar citas en fecha/hora pasada.
- */
-function isPastDateTime(dateValue, timeValue) {
-  if (!dateValue || !timeValue) return false;
-
-  const selected = new Date(`${dateValue}T${timeValue}`);
-  const now = new Date();
-
-  return selected < now;
 }
 
 /**

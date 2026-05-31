@@ -55,93 +55,7 @@
     <div id="alertContainer"></div>
 
     <section class="row g-4">
-      <div class="col-12 col-xl-4">
-        <article class="card app-card">
-          <div class="card-body">
-            <h2 class="h5 fw-bold mb-3" id="appointmentFormTitle">
-              Nueva cita
-            </h2>
-
-            <form id="appointmentForm" novalidate>
-              <input type="hidden" id="appointmentId" name="appointmentId">
-
-              <div class="mb-3">
-                <label for="patientId" class="form-label">Paciente</label>
-                <select class="form-select" id="patientId" name="patientId" required>
-                  <option value="">Cargando pacientes...</option>
-                </select>
-              </div>
-
-              <div class="mb-3">
-                <label for="specialtyId" class="form-label">Especialidad</label>
-                <select class="form-select" id="specialtyId" name="specialtyId" required>
-                  <option value="">Cargando especialidades...</option>
-                </select>
-              </div>
-
-              <div class="mb-3">
-                <label for="doctorId" class="form-label">Médico</label>
-                <select class="form-select" id="doctorId" name="doctorId" required>
-                  <option value="">Selecciona una especialidad primero</option>
-                </select>
-                <div class="form-text">
-                  Solo se muestran médicos activos de la especialidad seleccionada.
-                </div>
-              </div>
-
-              <div class="mb-3">
-                <label for="appointmentDate" class="form-label">Fecha de la cita</label>
-                <input
-                  type="date"
-                  class="form-control"
-                  id="appointmentDate"
-                  name="appointmentDate"
-                  required
-                >
-              </div>
-
-              <div class="mb-3">
-                <label for="appointmentTime" class="form-label">Hora de la cita</label>
-                <input
-                  type="time"
-                  class="form-control"
-                  id="appointmentTime"
-                  name="appointmentTime"
-                  required
-                >
-                <div class="form-text">
-                  El sistema bloquea citas con el mismo médico dentro de un margen de 30 minutos.
-                </div>
-              </div>
-
-              <div class="mb-3">
-                <label for="reason" class="form-label">Motivo de la cita</label>
-                <textarea
-                  class="form-control"
-                  id="reason"
-                  name="reason"
-                  rows="3"
-                  required
-                  minlength="5"
-                  placeholder="Ej. Consulta general por dolor de cabeza"
-                ></textarea>
-              </div>
-
-              <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-primary" id="saveAppointmentButton">
-                  Guardar cita
-                </button>
-
-                <button type="button" class="btn btn-outline-secondary d-none" id="cancelEditAppointmentButton">
-                  Cancelar edición
-                </button>
-              </div>
-            </form>
-          </div>
-        </article>
-      </div>
-
-      <div class="col-12 col-xl-8">
+      <div class="col-12">
         <article class="card app-card">
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
@@ -151,6 +65,10 @@
                   Consulta citas por día, médico, estado o búsqueda general.
                 </p>
               </div>
+
+              <a href="./appointment-form.html" class="btn btn-primary">
+                Nueva cita
+              </a>
             </div>
 
             <div class="row g-2 mb-3">
