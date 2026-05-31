@@ -55,92 +55,7 @@
     <div id="alertContainer"></div>
 
     <section class="row g-4">
-      <div class="col-12 col-xl-4">
-        <article class="card app-card">
-          <div class="card-body">
-            <h2 class="h5 fw-bold mb-3" id="doctorFormTitle">
-              Nuevo médico
-            </h2>
-
-            <form id="doctorForm" novalidate>
-              <input type="hidden" id="doctorId" name="doctorId">
-
-              <div class="mb-3">
-                <label for="fullName" class="form-label">Nombre completo</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="fullName"
-                  name="fullName"
-                  required
-                  minlength="3"
-                  placeholder="Ej. Dr. Carlos Ramírez"
-                >
-              </div>
-
-              <div class="mb-3">
-                <label for="email" class="form-label">Correo electrónico</label>
-                <input
-                  type="email"
-                  class="form-control"
-                  id="email"
-                  name="email"
-                  required
-                  placeholder="medico@correo.com"
-                >
-              </div>
-
-              <div class="mb-3">
-                <label for="phone" class="form-label">Teléfono</label>
-                <input
-                  type="tel"
-                  class="form-control"
-                  id="phone"
-                  name="phone"
-                  required
-                  minlength="10"
-                  placeholder="Ej. 4779876543"
-                >
-              </div>
-
-              <div class="mb-3">
-                <label for="specialtyId" class="form-label">Especialidad</label>
-                <select class="form-select" id="specialtyId" name="specialtyId" required>
-                  <option value="">Cargando especialidades...</option>
-                </select>
-                <div class="form-text">
-                  Primero debes registrar especialidades activas.
-                </div>
-              </div>
-
-              <div class="mb-3">
-                <label for="professionalLicense" class="form-label">Cédula profesional</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="professionalLicense"
-                  name="professionalLicense"
-                  required
-                  minlength="5"
-                  placeholder="Ej. 12345678"
-                >
-              </div>
-
-              <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-primary" id="saveDoctorButton">
-                  Guardar médico
-                </button>
-
-                <button type="button" class="btn btn-outline-secondary d-none" id="cancelEditDoctorButton">
-                  Cancelar edición
-                </button>
-              </div>
-            </form>
-          </div>
-        </article>
-      </div>
-
-      <div class="col-12 col-xl-8">
+      <div class="col-12">
         <article class="card app-card">
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
@@ -150,7 +65,11 @@
                   Busca, filtra, consulta, edita o desactiva médicos.
                 </p>
               </div>
-            </div>
+
+  <a href="./doctor-form.html" class="btn btn-primary">
+    Nuevo médico
+  </a>
+</div>
 
             <div class="row g-2 mb-3">
               <div class="col-12 col-lg-5">

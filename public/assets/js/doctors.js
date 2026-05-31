@@ -1,18 +1,12 @@
 import { requireAuth } from './auth.js';
 
 import {
-  createRecord,
-  updateRecord,
   deactivateRecord,
-  getRecords,
-  recordExists
+  getRecords
 } from './firestore.js';
-
-import { validateFields } from './validators.js';
 
 import {
   showAlert,
-  setButtonLoading,
   escapeHTML,
   normalizeText,
   formatTimestamp,
@@ -28,16 +22,6 @@ let specialties = [];
 let activeSpecialties = [];
 let detailModal = null;
 
-const form = document.getElementById('doctorForm');
-const formTitle = document.getElementById('doctorFormTitle');
-const doctorIdInput = document.getElementById('doctorId');
-const fullNameInput = document.getElementById('fullName');
-const emailInput = document.getElementById('email');
-const phoneInput = document.getElementById('phone');
-const specialtyIdInput = document.getElementById('specialtyId');
-const professionalLicenseInput = document.getElementById('professionalLicense');
-const saveButton = document.getElementById('saveDoctorButton');
-const cancelEditButton = document.getElementById('cancelEditDoctorButton');
 const searchInput = document.getElementById('doctorSearchInput');
 const statusFilter = document.getElementById('doctorStatusFilter');
 const specialtyFilter = document.getElementById('doctorSpecialtyFilter');
@@ -52,14 +36,23 @@ const tableBody = document.getElementById('doctorsTableBody');
 function initDoctorsPage() {
   detailModal = new bootstrap.Modal(document.getElementById('doctorDetailModal'));
 
-  form.addEventListener('submit', handleSubmit);
-  cancelEditButton.addEventListener('click', resetForm);
+  showStoredAlert();
+
   searchInput.addEventListener('input', renderDoctors);
   statusFilter.addEventListener('change', renderDoctors);
   specialtyFilter.addEventListener('change', renderDoctors);
   tableBody.addEventListener('click', handleTableClick);
 
   loadInitialData();
+}
+
+function showStoredAlert() {
+  const message = sessionStorage.getItem('clinicAgendaAlert');
+
+  if (!message) return;
+
+  showAlert(message, 'success');
+  sessionStorage.removeItem('clinicAgendaAlert');
 }
 
 /**
@@ -79,42 +72,15 @@ async function loadInitialData() {
 
     doctors = doctorsResult;
     specialties = specialtiesResult;
-    activeSpecialties = specialties.filter((specialty) => specialty.active !== false);
 
-    renderSpecialtyOptions();
+    renderDoctorFilterOptions();
     renderDoctors();
-
-    if (activeSpecialties.length === 0) {
-      showAlert(
-        'No hay especialidades activas. Registra al menos una especialidad antes de crear médicos.',
-        'warning'
-      );
-    }
   } catch (error) {
     console.error(error);
     showAlert('No fue posible cargar el módulo de médicos.', 'danger');
     renderTableEmpty(tableBody, 'No se pudieron cargar los registros.', 6);
   }
 }
-
-/**
- * Llena el select del formulario y el filtro de especialidad.
- */
-function renderSpecialtyOptions() {
-  renderSpecialtyFormOptions();
-  renderSpecialtyFilterOptions();
-}
-
-/**
- * Llena el select del formulario con especialidades activas.
- */
-function renderSpecialtyFormOptions() {
-  if (activeSpecialties.length === 0) {
-    specialtyIdInput.innerHTML = '<option value="">No hay especialidades activas</option>';
-    specialtyIdInput.disabled = true;
-    saveButton.disabled = true;
-    return;
-  }
 
   specialtyIdInput.disabled = false;
   saveButton.disabled = false;
@@ -260,129 +226,6 @@ function renderDoctors() {
 }
 
 /**
- * Construye el objeto que se guardará en Firestore.
- */
-function buildDoctorPayload() {
-  const fullName = fullNameInput.value.trim();
-  const email = emailInput.value.trim().toLowerCase();
-  const phone = phoneInput.value.trim();
-  const specialtyId = specialtyIdInput.value;
-  const professionalLicense = professionalLicenseInput.value.trim();
-
-  return {
-    fullName,
-    fullNameNormalized: normalizeText(fullName),
-    email,
-    emailNormalized: normalizeText(email),
-    phone,
-    specialtyId,
-    professionalLicense,
-    professionalLicenseNormalized: normalizeText(professionalLicense)
-  };
-}
-
-/**
- * Crea o actualiza médicos.
- *
- * Antes de guardar valida:
- * - Campos obligatorios.
- * - Correo válido.
- * - Teléfono mínimo.
- * - Especialidad seleccionada.
- * - Cédula mínima.
- * - Correo duplicado.
- * - Cédula duplicada.
- */
-async function handleSubmit(event) {
-  event.preventDefault();
-
-  const editingId = doctorIdInput.value || null;
-  const payload = buildDoctorPayload();
-
-  const errors = validateFields([
-    {
-      label: 'Nombre completo',
-      value: payload.fullName,
-      rules: { required: true, minLength: 3 }
-    },
-    {
-      label: 'Correo electrónico',
-      value: payload.email,
-      rules: { required: true, email: true }
-    },
-    {
-      label: 'Teléfono',
-      value: payload.phone,
-      rules: { required: true, minLength: 10 }
-    },
-    {
-      label: 'Especialidad',
-      value: payload.specialtyId,
-      rules: { required: true }
-    },
-    {
-      label: 'Cédula profesional',
-      value: payload.professionalLicense,
-      rules: { required: true, minLength: 5 }
-    }
-  ]);
-
-  if (errors.length > 0) {
-    showAlert(errors.join('<br>'), 'danger');
-    return;
-  }
-
-  if (!isActiveSpecialty(payload.specialtyId)) {
-    showAlert('La especialidad seleccionada no existe o está inactiva.', 'danger');
-    return;
-  }
-
-  try {
-    setButtonLoading(saveButton, true, 'Guardando...');
-
-    const duplicatedEmail = await recordExists({
-      collectionName: COLLECTION_NAME,
-      fieldName: 'emailNormalized',
-      value: payload.emailNormalized,
-      excludeId: editingId
-    });
-
-    if (duplicatedEmail) {
-      showAlert('Ya existe un médico activo con ese correo electrónico.', 'warning');
-      return;
-    }
-
-    const duplicatedLicense = await recordExists({
-      collectionName: COLLECTION_NAME,
-      fieldName: 'professionalLicenseNormalized',
-      value: payload.professionalLicenseNormalized,
-      excludeId: editingId
-    });
-
-    if (duplicatedLicense) {
-      showAlert('Ya existe un médico activo con esa cédula profesional.', 'warning');
-      return;
-    }
-
-    if (editingId) {
-      await updateRecord(COLLECTION_NAME, editingId, payload);
-      showAlert('Médico actualizado correctamente.', 'success');
-    } else {
-      await createRecord(COLLECTION_NAME, payload);
-      showAlert('Médico registrado correctamente.', 'success');
-    }
-
-    resetForm();
-    await loadInitialData();
-  } catch (error) {
-    console.error(error);
-    showAlert('No fue posible guardar el médico.', 'danger');
-  } finally {
-    setButtonLoading(saveButton, false);
-  }
-}
-
-/**
  * Controla los botones de la tabla mediante delegación de eventos.
  */
 function handleTableClick(event) {
@@ -439,35 +282,7 @@ function handleDetail(id) {
  * Carga datos del médico en el formulario para editar.
  */
 function handleEdit(id) {
-  const doctor = findDoctorById(id);
-
-  if (!doctor) {
-    showAlert('No se encontró el médico seleccionado.', 'warning');
-    return;
-  }
-
-  if (!isActiveSpecialty(doctor.specialtyId)) {
-    showAlert(
-      'Este médico tiene una especialidad inactiva. Para editarlo, primero selecciona una especialidad activa.',
-      'warning'
-    );
-  }
-
-  doctorIdInput.value = doctor.id;
-  fullNameInput.value = doctor.fullName || '';
-  emailInput.value = doctor.email || '';
-  phoneInput.value = doctor.phone || '';
-  specialtyIdInput.value = isActiveSpecialty(doctor.specialtyId) ? doctor.specialtyId : '';
-  professionalLicenseInput.value = doctor.professionalLicense || '';
-
-  formTitle.textContent = 'Editar médico';
-  saveButton.textContent = 'Actualizar médico';
-  cancelEditButton.classList.remove('d-none');
-
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth'
-  });
+  window.location.href = `./doctor-form.html?id=${encodeURIComponent(id)}`;
 }
 
 /**
@@ -498,20 +313,6 @@ async function handleDeactivate(id) {
 }
 
 /**
- * Limpia el formulario y vuelve al modo creación.
- */
-function resetForm() {
-  form.reset();
-  doctorIdInput.value = '';
-
-  formTitle.textContent = 'Nuevo médico';
-  saveButton.textContent = 'Guardar médico';
-  cancelEditButton.classList.add('d-none');
-
-  renderSpecialtyFormOptions();
-}
-
-/**
  * Obtiene el nombre de una especialidad por ID.
  */
 function getSpecialtyName(specialtyId) {
@@ -526,13 +327,6 @@ function getSpecialtyName(specialtyId) {
   }
 
   return specialty.name;
-}
-
-/**
- * Verifica si una especialidad existe y está activa.
- */
-function isActiveSpecialty(specialtyId) {
-  return activeSpecialties.some((specialty) => specialty.id === specialtyId);
 }
 
 requireAuth(() => {
