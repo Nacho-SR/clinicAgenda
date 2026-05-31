@@ -82,23 +82,6 @@ async function loadInitialData() {
   }
 }
 
-  specialtyIdInput.disabled = false;
-  saveButton.disabled = false;
-
-  const options = activeSpecialties.map((specialty) => {
-    return `
-      <option value="${specialty.id}">
-        ${escapeHTML(specialty.name)}
-      </option>
-    `;
-  }).join('');
-
-  specialtyIdInput.innerHTML = `
-    <option value="">Selecciona una especialidad</option>
-    ${options}
-  `;
-}
-
 /**
  * Llena el filtro de especialidad.
  *
