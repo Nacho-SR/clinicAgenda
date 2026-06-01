@@ -73,7 +73,7 @@ async function loadInitialData() {
     doctors = doctorsResult;
     specialties = specialtiesResult;
 
-    renderDoctorFilterOptions();
+    renderSpecialtyFilterOptions();
     renderDoctors();
   } catch (error) {
     console.error(error);
